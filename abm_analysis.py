@@ -14,7 +14,7 @@ import traceback
 from itertools import combinations
 from multiprocessing import Pool
 from pathlib import Path
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -61,6 +61,47 @@ ONLY_STAFF_SUPPORT_COLUMN = "staff-support"  # type:str
 ONLY_PASSENGER_SUPPORT_COLUMN = "passenger-support"  # type:str
 ADAPTIVE_SUPPORT_COLUMN = "adaptive-support"
 
+
+class ExperimentRun(object):
+
+    def __init__(self, simulation_id, commands_per_scenario, random_seed, normal_staff_number, staff_number,
+                 passenger_number, fall_length):
+        # type: (int, List[Tuple[str, bool]], int, int, int, int, int) -> None
+
+        self.simulation_id = simulation_id  # type: int
+        self.base_scenario_commands = commands_per_scenario  # type: List[Tuple[str, bool]]
+
+        self.random_seed = random_seed  # type: int
+        self.normal_staff_number = normal_staff_number  # type: int
+        self.staff_number = staff_number  # type: int
+        self.passenger_number = passenger_number  # type: int
+        self.fall_length = fall_length  # type: int
+
+    def get_random_seed_command(self):
+        # type: () -> str
+        return SEED_SIMULATION_REPORTER.format(self.random_seed)
+
+    def get_pre_setup_commands(self):
+        # type: () -> List[str]
+        pre_setup_commands = [command for command, before_setup in self.base_scenario_commands
+                              if before_setup]  # type: List[str]
+
+        pre_setup_commands.append(SET_NUMBER_NORMAL_STAFF_COMMAND.format(self.normal_staff_number))
+        pre_setup_commands.append(SET_NUMBER_STAFF_COMMAND.format(self.staff_number))
+        pre_setup_commands.append(SET_NUMBER_PASSENGERS_COMMAND.format(self.passenger_number))
+
+        return pre_setup_commands
+
+    def get_post_setup_commands(self):
+        # type: () -> List[str]
+        post_setup_commands = [command for command, before_setup in self.base_scenario_commands if
+                               not before_setup]  # type: List[str]
+
+        post_setup_commands.append(SET_FALL_LENGTH_COMMAND.format(self.fall_length))
+
+        return post_setup_commands
+
+
 SIMULATION_SCENARIOS = {NO_SUPPORT_COLUMN: [],
                         ONLY_STAFF_SUPPORT_COLUMN: [ENABLE_STAFF_COMMAND],
                         ONLY_PASSENGER_SUPPORT_COLUMN: [ENABLE_PASSENGER_COMMAND],
@@ -76,9 +117,6 @@ FALL_LENGTHS = [minutes * 30 for minutes in range(1, 21)]  # type: List[int]
 SAMPLES = 1
 FALL_LENGTHS = [minutes * 60 for minutes in range(3, 4)]
 SIMULATION_SCENARIOS = {ADAPTIVE_SUPPORT_COLUMN: [
-    (SET_NUMBER_NORMAL_STAFF_COMMAND.format(1), True),
-    (SET_NUMBER_STAFF_COMMAND.format(1), True),
-    (SET_NUMBER_PASSENGERS_COMMAND.format(300), True),
     (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
     (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
     (ENABLE_PASSENGER_COMMAND, False),
@@ -109,15 +147,16 @@ def calculate_sample_size(mean_1, mean_2, std_dev_1, std_dev_2, alpha=0.05, powe
     return result
 
 
-def run_simulation(simulation_id, setup_commands, random_seed=0):
-    # type: (int, List[Tuple], int) -> Optional[float]
+def run_simulation(experiment_run):
+    # type: (ExperimentRun) -> Optional[float]
     from pyNetLogo import NetLogoException
 
-    pre_setup_commands = [command for command, before_setup in setup_commands if before_setup]  # type: List[str]
-    post_setup_commands = [command for command, before_setup in setup_commands if not before_setup]  # type: List[str]
+    simulation_id = experiment_run.simulation_id
+    pre_setup_commands = experiment_run.get_pre_setup_commands()  # type: List[str]
+    post_setup_commands = experiment_run.get_post_setup_commands()  # type: List[str]
 
     try:
-        random_seed = netlogo_link.report(SEED_SIMULATION_REPORTER.format(random_seed))  # type:str
+        random_seed = netlogo_link.report(experiment_run.get_random_seed_command())  # type:str
 
         if len(pre_setup_commands) > 0:
             for pre_setup_command in pre_setup_commands:
@@ -169,14 +208,15 @@ def initialize(gui):
     netlogo_link.load_model(NETLOGO_MODEL_FILE)
 
 
-def start_experiments(experiment_configurations, results_file):
-    # type: (Dict[str, List[Tuple]], str) -> None
+def start_experiments(fall_length, experiment_configurations, results_file):
+    # type: (int, Dict[str, List[Tuple[str, bool]]], str) -> None
 
     start_time = time.time()  # type: float
 
     experiment_data = {}  # type: Dict[str, List[float]]
     for experiment_name, experiment_commands in experiment_configurations.items():
         scenario_times = run_parallel_simulations(SAMPLES,
+                                                  fall_length,
                                                   setup_commands=experiment_commands)  # type:List[float]
         experiment_data[experiment_name] = scenario_times
 
@@ -194,19 +234,35 @@ def run_simulation_with_dict(dict_parameters):
     return run_simulation(**dict_parameters)
 
 
-def run_parallel_simulations(samples, setup_commands, gui=False):
-    # type: (int, List[Tuple], bool) -> List[float]
+def get_experiment_runs(samples, fall_length, commands_per_scenario):
+    # type: (int, int, List[Tuple[str, bool]]) -> List[ExperimentRun]
+    experiment_runs = []  # type: List[ExperimentRun]
+
+    random_seed = random.randint(NETLOGO_MINIMUM_SEED, NETLOGO_MAXIMUM_SEED)  # type: int
+    normal_staff_number = 1  # type: int
+    staff_number = 1  # type: int
+    passenger_number = 300  # type: int
+
+    for simulation_id in range(samples):
+        experiment_runs.append(ExperimentRun(simulation_id=simulation_id, commands_per_scenario=commands_per_scenario,
+                                             random_seed=random_seed, normal_staff_number=normal_staff_number,
+                                             staff_number=staff_number, passenger_number=passenger_number,
+                                             fall_length=fall_length))
+
+    return experiment_runs
+
+
+def run_parallel_simulations(samples, fall_length, setup_commands, gui=False):
+    # type: (int, int, List[Tuple[str, bool]], bool) -> List[float]
 
     initialise_arguments = (gui,)  # type: Tuple
-    simulation_parameters = [{"simulation_id": simulation_id, "setup_commands": setup_commands,
-                              "random_seed": random.randint(NETLOGO_MINIMUM_SEED, NETLOGO_MAXIMUM_SEED)}
-                             for simulation_id in range(samples)]  # type: List[Dict]
+    simulation_parameters = get_experiment_runs(samples, fall_length, setup_commands)  # type: List[ExperimentRun]
 
     results = []  # type: List[float]
     executor = Pool(initializer=initialize,
                     initargs=initialise_arguments)  # type: multiprocessing.pool.Pool
 
-    for simulation_output in executor.map(func=run_simulation_with_dict,
+    for simulation_output in executor.map(func=run_simulation,
                                           iterable=simulation_parameters):
         if simulation_output:
             results.append(simulation_output)
@@ -355,12 +411,8 @@ def test_mann_whitney(first_scenario_column, second_scenario_column, csv_file, a
 def simulate_and_store(fall_length):
     # type: (int) -> None
     results_file_name = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
-    update_fall_length = (SET_FALL_LENGTH_COMMAND.format(fall_length), False)  # type: Tuple
 
-    updated_simulation_scenarios = {scenario_name: commands + [update_fall_length]
-                                    for scenario_name, commands in
-                                    SIMULATION_SCENARIOS.iteritems()}  # type: Dict[str, List[Tuple]]
-    start_experiments(updated_simulation_scenarios, results_file_name)
+    start_experiments(fall_length, SIMULATION_SCENARIOS, results_file_name)
 
 
 def get_current_file_metrics(current_file):
