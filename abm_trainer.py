@@ -8,8 +8,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from typing import List, Tuple, Optional
 
-from abm_analysis import run_parallel_simulations, SET_STAFF_SUPPORT_COMMAND, SET_PASSENGER_SUPPORT_COMMAND, \
-    SET_FALL_LENGTH_COMMAND, SET_ENABLE_LOGGING_COMMAND
+from abm_analysis import run_parallel_simulations
+from netlogo_config import SET_STAFF_SUPPORT_COMMAND, SET_PASSENGER_SUPPORT_COMMAND, SET_FALL_LENGTH_COMMAND, \
+    SET_ENABLE_LOGGING_COMMAND
 from analyser import NeuralNetworkTypeAnalyser
 from prob_calibration import start_probability_calibration
 from synthetic_runner import encode_training_data, TYPE_ANALYSER_MODEL_FILE, ENCODER_FILE

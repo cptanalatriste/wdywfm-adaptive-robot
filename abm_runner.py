@@ -7,7 +7,8 @@ from typing import Dict
 
 import abm_gamemodel
 from abm_trainer import CALIBRATION_SENSOR_DATA_FILE, CALIBRATION_PERSON_TYPE_FILE
-from analyser import NeuralNetworkTypeAnalyser, CalibratedTypeAnalyser, NaiveTypeAnalyser
+from analyser import NeuralNetworkTypeAnalyser, CalibratedTypeAnalyser
+from formideable import NaiveTypeAnalyser
 from controller import AutonomicManagerController
 from environment import NetlogoEvacuationEnvironment
 from prob_calibration import get_calibrated_model

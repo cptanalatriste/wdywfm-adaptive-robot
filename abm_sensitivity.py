@@ -6,8 +6,9 @@ import seaborn
 from matplotlib.axes import Axes
 from typing import List, Dict, Tuple
 
-from abm_analysis import SIMULATION_SCENARIOS, run_parallel_simulations, PLOT_STYLE, \
-    SET_FALL_LENGTH_COMMAND
+from abm_analysis import run_parallel_simulations, PLOT_STYLE
+from netlogo_config import SET_FALL_LENGTH_COMMAND
+from formideable import SIMULATION_SCENARIOS
 from abm_statistics import ADAPTIVE_SUPPORT_COLUMN
 
 EVACUATION_TIME_COLUMN = "evacuation_time"

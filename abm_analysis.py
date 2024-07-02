@@ -8,7 +8,6 @@ This module relies on Python 3+ for some statistical analysis.
 
 import math
 import multiprocessing
-import random
 import time
 import traceback
 from multiprocessing import Pool
@@ -19,37 +18,13 @@ import pandas as pd
 
 from abm_statistics import NO_SUPPORT_COLUMN, ONLY_STAFF_SUPPORT_COLUMN, ONLY_PASSENGER_SUPPORT_COLUMN, \
     ADAPTIVE_SUPPORT_COLUMN, get_dataframe, plot_results, test_kruskal_wallis
+import formideable
+from netlogo_config import NETLOGO_MODEL_FILE, NETLOGO_HOME, NETLOGO_VERSION, TURTLE_PRESENT_REPORTER, \
+    EVACUATED_REPORTER, DEAD_REPORTER, ENABLE_STAFF_COMMAND, ENABLE_PASSENGER_COMMAND, MAX_NETLOGO_TICKS, ExperimentRun
 
 PLOT_STYLE = 'seaborn-darkgrid'
 
-NETLOGO_PROJECT_DIRECTORY = "/home/cgc87/github/robot-assisted-evacuation/"  # type:str
-NETLOGO_MODEL_FILE = NETLOGO_PROJECT_DIRECTORY + "/impact2.10.7/v2.11.0.nlogo"  # type:str
-NETLOGO_HOME = "/home/cgc87/netlogo-5.3.1-64"  # type:str
-NETLOGO_VERSION = "5"  # type:str
-
-TURTLE_PRESENT_REPORTER = "count turtles"  # type:str
-EVACUATED_REPORTER = "number_passengers - count agents + 1"  # type:str
-DEAD_REPORTER = "count agents with [ st_dead = 1 ]"  # type:str
-
-SEED_SIMULATION_REPORTER = "seed-simulation {}"
-
 RESULTS_CSV_FILE = "data/{}_fall_{}_samples_experiment_results.csv"  # type:str
-
-SET_SIMULATION_ID_COMMAND = "set SIMULATION_ID {}"  # type:str
-SET_STAFF_SUPPORT_COMMAND = "set REQUEST_STAFF_SUPPORT {}"  # type: str
-SET_PASSENGER_SUPPORT_COMMAND = "set REQUEST_BYSTANDER_SUPPORT {}"  # type: str
-SET_FALL_LENGTH_COMMAND = "set DEFAULT_FALL_LENGTH {}"  # type:str
-SET_ENABLE_LOGGING_COMMAND = "set ENABLE_LOGGING {}"  # type:str
-SET_GENERATE_FRAMES_COMMAND = "set ENABLE_FRAME_GENERATION {}"  # type:str
-SET_NUMBER_PASSENGERS_COMMAND = "set number_passengers {}"  # type:str
-SET_NUMBER_NORMAL_STAFF_COMMAND = "set _number_normal_staff_members {}"  # type:str
-SET_NUMBER_STAFF_COMMAND = "set _number_staff_members {}"  # type:str
-
-ENABLE_STAFF_COMMAND = SET_STAFF_SUPPORT_COMMAND.format("TRUE")  # type:str
-ENABLE_PASSENGER_COMMAND = SET_PASSENGER_SUPPORT_COMMAND.format("TRUE")  # type:str
-
-NETLOGO_MINIMUM_SEED = -2147483648  # type:int
-NETLOGO_MAXIMUM_SEED = 2147483647  # type:int
 
 SIMULATION_SCENARIOS = {NO_SUPPORT_COLUMN: [],
                         ONLY_STAFF_SUPPORT_COLUMN: [ENABLE_STAFF_COMMAND],
@@ -59,82 +34,13 @@ SIMULATION_SCENARIOS = {NO_SUPPORT_COLUMN: [],
 
 # Settings for experiments
 SAMPLES = 100  # type:int
-MAX_NETLOGO_TICKS = 2000  # type: int
 FALL_LENGTHS = [minutes * 30 for minutes in range(1, 21)]  # type: List[int]
 
 # TODO(cgavidia): Uncomment for test runs
-SAMPLES = 2
-FALL_LENGTHS = [minutes * 60 for minutes in range(3, 5)]
-SIMULATION_SCENARIOS = {ADAPTIVE_SUPPORT_COLUMN: [
-    (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
-    (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
-    (ENABLE_PASSENGER_COMMAND, False),
-    (ENABLE_STAFF_COMMAND, False)]}
-NETLOGO_MINIMUM_SEED = 0  # type:int
-NETLOGO_MAXIMUM_SEED = 10  # type:int
-
-
-class ExperimentRun(object):
-
-    def __init__(self, simulation_id, commands_per_scenario, random_seed, normal_staff_number, staff_number,
-                 passenger_number, fall_length):
-        # type: (int, List[Tuple[str, bool]], int, int, int, int, int) -> None
-
-        self.simulation_id = simulation_id  # type: int
-        self.base_scenario_commands = commands_per_scenario  # type: List[Tuple[str, bool]]
-
-        self.random_seed = random_seed  # type: int
-        self.normal_staff_number = normal_staff_number  # type: int
-        self.staff_number = staff_number  # type: int
-        self.passenger_number = passenger_number  # type: int
-        self.fall_length = fall_length  # type: int
-
-        self.evacuation_time = -1.0  # type: float
-
-    def get_random_seed_command(self):
-        # type: () -> str
-        return SEED_SIMULATION_REPORTER.format(self.random_seed)
-
-    def get_pre_setup_commands(self):
-        # type: () -> List[str]
-        pre_setup_commands = [command for command, before_setup in self.base_scenario_commands
-                              if before_setup]  # type: List[str]
-
-        pre_setup_commands.append(SET_NUMBER_NORMAL_STAFF_COMMAND.format(self.normal_staff_number))
-        pre_setup_commands.append(SET_NUMBER_STAFF_COMMAND.format(self.staff_number))
-        pre_setup_commands.append(SET_NUMBER_PASSENGERS_COMMAND.format(self.passenger_number))
-
-        return pre_setup_commands
-
-    def get_post_setup_commands(self):
-        # type: () -> List[str]
-        post_setup_commands = [command for command, before_setup in self.base_scenario_commands if
-                               not before_setup]  # type: List[str]
-
-        post_setup_commands.append(SET_FALL_LENGTH_COMMAND.format(self.fall_length))
-
-        return post_setup_commands
-
-
-def get_experiment_runs(samples, fall_length, commands_per_scenario):
-    # type: (int, int, List[Tuple[str, bool]]) -> List[ExperimentRun]
-    experiment_runs = []  # type: List[ExperimentRun]
-
-    random_seeds = [random.randint(NETLOGO_MINIMUM_SEED, NETLOGO_MAXIMUM_SEED) for _ in
-                    range(samples)]  #  type: List[int]
-    normal_staff_number = [staff for staff in range(1, samples + 1)]  # type: List[int]
-    staff_number = [staff for staff in range(1, samples + 1)]  # type: List[int]
-    passenger_number = [150 * index for index in range(1, samples + 1)]  # type: List[int]
-
-    for simulation_id in range(samples):
-        experiment_runs.append(ExperimentRun(simulation_id=simulation_id, commands_per_scenario=commands_per_scenario,
-                                             random_seed=random_seeds[simulation_id],
-                                             normal_staff_number=normal_staff_number[simulation_id],
-                                             staff_number=staff_number[simulation_id],
-                                             passenger_number=passenger_number[simulation_id],
-                                             fall_length=fall_length))
-
-    return experiment_runs
+# SAMPLES = 2
+# FALL_LENGTHS = [minutes * 60 for minutes in range(3, 5)]
+# NETLOGO_MINIMUM_SEED = 0  # type:int
+# NETLOGO_MAXIMUM_SEED = 10  # type:int
 
 
 def run_simulation(experiment_run):
@@ -206,9 +112,7 @@ def start_experiments(fall_length, experiment_configurations, results_file):
 
     experiment_data = {}  # type: Dict[str, List[float]]
     for experiment_name, experiment_commands in experiment_configurations.items():
-        experiment_runs = run_parallel_simulations(SAMPLES,
-                                                   fall_length,
-                                                   setup_commands=experiment_commands)  # type:List[ExperimentRun]
+        experiment_runs = run_parallel_simulations(setup_commands=experiment_commands)  # type:List[ExperimentRun]
         experiment_data[experiment_name] = [run.evacuation_time for run in experiment_runs]
         experiment_data["{}_seed".format(experiment_name)] = [run.random_seed for run in experiment_runs]
         experiment_data["{}_passengers".format(experiment_name)] = [run.passenger_number for run in experiment_runs]
@@ -230,11 +134,12 @@ def run_simulation_with_dict(dict_parameters):
     return run_simulation(**dict_parameters)
 
 
-def run_parallel_simulations(samples, fall_length, setup_commands, gui=False):
-    # type: (int, int, List[Tuple[str, bool]], bool) -> List[ExperimentRun]
+def run_parallel_simulations(setup_commands, gui=False):
+    # type: (List[Tuple[str, bool]], bool) -> List[ExperimentRun]
 
     initialise_arguments = (gui,)  # type: Tuple
-    simulation_parameters = get_experiment_runs(samples, fall_length, setup_commands)  # type: List[ExperimentRun]
+    # Running FormIDEAble experiments. Adjustment for TOSEM is pending.
+    simulation_parameters = formideable.get_runs_from_file(setup_commands)  # type: List[ExperimentRun]
 
     results = []  # type: List[ExperimentRun]
     executor = Pool(initializer=initialize,
@@ -253,9 +158,14 @@ def run_parallel_simulations(samples, fall_length, setup_commands, gui=False):
 
 def simulate_and_store(fall_length):
     # type: (int) -> None
-    results_file_name = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
+    # Uncomment for TOSEM
+    # results_file_name = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
+    results_file_name = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
 
-    start_experiments(fall_length, SIMULATION_SCENARIOS, results_file_name)
+    # Uncomment for TOSEM experiments
+    # start_experiments(fall_length, SIMULATION_SCENARIOS, results_file_name)
+
+    start_experiments(fall_length, formideable.SIMULATION_SCENARIOS, results_file_name)
 
 
 def get_current_file_metrics(current_file):
@@ -276,7 +186,9 @@ def get_current_file_metrics(current_file):
 def perform_analysis(fall_length):
     # type: (int) -> Dict[str, float]
 
-    current_file = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
+    # Uncomment for TOSEM
+    # current_file = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
+    current_file = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
     plt.style.use(PLOT_STYLE)
     plot_results(csv_file=current_file)
     current_file_metrics = get_current_file_metrics(current_file)  # type: Dict[str, float]
@@ -300,10 +212,15 @@ def perform_analysis(fall_length):
 
 
 if __name__ == "__main__":
-    for length in FALL_LENGTHS:
+    # Uncomment for TOSEM
+    # for length in FALL_LENGTHS:
+    for length in formideable.FALL_LENGTHS:
         simulate_and_store(length)
 
-    metrics = pd.DataFrame([perform_analysis(length) for length in FALL_LENGTHS])  # type: pd.DataFrame
+    # Uncomment for TOSEM
+    # metrics = pd.DataFrame([perform_analysis(length) for length in FALL_LENGTHS])  # type: pd.DataFrame
+    metrics = pd.DataFrame([perform_analysis(length) for length in formideable.FALL_LENGTHS])  # type: pd.DataFrame
+
     metrics_file = "data/metrics.csv"  # type: str
     metrics.to_csv(metrics_file)
     print("Consolidates metrics written to {}".format(metrics_file))
