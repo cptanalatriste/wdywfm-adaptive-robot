@@ -174,11 +174,12 @@ def get_current_file_metrics(current_file):
     metrics_dict = {}  # type: Dict[str, float]
 
     for scenario in SIMULATION_SCENARIOS.keys():
-        metrics_dict["{}_mean".format(scenario)] = results_dataframe[scenario].mean()
-        metrics_dict["{}_std".format(scenario)] = results_dataframe[scenario].std()
-        metrics_dict["{}_median".format(scenario)] = results_dataframe[scenario].median()
-        metrics_dict["{}_min".format(scenario)] = results_dataframe[scenario].min()
-        metrics_dict["{}_max".format(scenario)] = results_dataframe[scenario].max()
+        if scenario in results_dataframe.columns.tolist():
+            metrics_dict["{}_mean".format(scenario)] = results_dataframe[scenario].mean()
+            metrics_dict["{}_std".format(scenario)] = results_dataframe[scenario].std()
+            metrics_dict["{}_median".format(scenario)] = results_dataframe[scenario].median()
+            metrics_dict["{}_min".format(scenario)] = results_dataframe[scenario].min()
+            metrics_dict["{}_max".format(scenario)] = results_dataframe[scenario].max()
 
     return metrics_dict
 

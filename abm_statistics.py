@@ -64,6 +64,7 @@ def plot_results(csv_file, samples_in_title=False):
 
     title = ""
     order = ["No Support", "Prosocial-Oriented", "Proself-Oriented", "Adaptive"]  # type: List[str]
+    order = [column for column in order if column in results_dataframe.columns.tolist()]
     if samples_in_title:
         title = "{} samples".format(len(results_dataframe))
 
