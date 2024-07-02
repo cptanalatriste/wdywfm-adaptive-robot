@@ -89,6 +89,8 @@ class ExperimentRun(object):
         self.passenger_number = passenger_number  # type: int
         self.fall_length = fall_length  # type: int
 
+        self.evacuation_time = -1.0  # type: float
+
     def get_random_seed_command(self):
         # type: () -> str
         return SEED_SIMULATION_REPORTER.format(self.random_seed)
@@ -136,7 +138,7 @@ def get_experiment_runs(samples, fall_length, commands_per_scenario):
 
 
 def run_simulation(experiment_run):
-    # type: (ExperimentRun) -> Optional[float]
+    # type: (ExperimentRun) -> Optional[ExperimentRun]
     from pyNetLogo import NetLogoException
 
     simulation_id = experiment_run.simulation_id
@@ -175,7 +177,8 @@ def run_simulation(experiment_run):
             metrics_dataframe.to_csv("data/nan_df.csv")
             print("DEBUG!!! info to data/nan_df.csv")
 
-        return evacuation_time
+        experiment_run.evacuation_time = evacuation_time
+        return experiment_run
     except NetLogoException:
         traceback.print_exc()
         raise
@@ -203,10 +206,15 @@ def start_experiments(fall_length, experiment_configurations, results_file):
 
     experiment_data = {}  # type: Dict[str, List[float]]
     for experiment_name, experiment_commands in experiment_configurations.items():
-        scenario_times = run_parallel_simulations(SAMPLES,
-                                                  fall_length,
-                                                  setup_commands=experiment_commands)  # type:List[float]
-        experiment_data[experiment_name] = scenario_times
+        experiment_runs = run_parallel_simulations(SAMPLES,
+                                                   fall_length,
+                                                   setup_commands=experiment_commands)  # type:List[ExperimentRun]
+        experiment_data[experiment_name] = [run.evacuation_time for run in experiment_runs]
+        experiment_data["{}_seed".format(experiment_name)] = [run.random_seed for run in experiment_runs]
+        experiment_data["{}_passengers".format(experiment_name)] = [run.passenger_number for run in experiment_runs]
+        experiment_data["{}_staff".format(experiment_name)] = [run.staff_number for run in experiment_runs]
+        experiment_data["{}_normal_staff".format(experiment_name)] = [run.normal_staff_number for run in
+                                                                      experiment_runs]
 
     end_time = time.time()  # type: float
     print("Simulation finished after {} seconds".format(end_time - start_time))
@@ -223,12 +231,12 @@ def run_simulation_with_dict(dict_parameters):
 
 
 def run_parallel_simulations(samples, fall_length, setup_commands, gui=False):
-    # type: (int, int, List[Tuple[str, bool]], bool) -> List[float]
+    # type: (int, int, List[Tuple[str, bool]], bool) -> List[ExperimentRun]
 
     initialise_arguments = (gui,)  # type: Tuple
     simulation_parameters = get_experiment_runs(samples, fall_length, setup_commands)  # type: List[ExperimentRun]
 
-    results = []  # type: List[float]
+    results = []  # type: List[ExperimentRun]
     executor = Pool(initializer=initialize,
                     initargs=initialise_arguments)  # type: multiprocessing.pool.Pool
 
