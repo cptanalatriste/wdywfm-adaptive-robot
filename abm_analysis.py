@@ -36,6 +36,7 @@ SIMULATION_SCENARIOS = {NO_SUPPORT_COLUMN: [],
 SAMPLES = 100  # type:int
 FALL_LENGTHS = [minutes * 30 for minutes in range(1, 21)]  # type: List[int]
 
+
 # TODO(cgavidia): Uncomment for test runs
 # SAMPLES = 2
 # FALL_LENGTHS = [minutes * 60 for minutes in range(3, 5)]
@@ -195,8 +196,10 @@ def perform_analysis(fall_length):
     current_file_metrics = get_current_file_metrics(current_file)  # type: Dict[str, float]
     current_file_metrics["fall_length"] = fall_length
 
-    current_file_metrics.update(
-        test_kruskal_wallis(current_file, list(SIMULATION_SCENARIOS.keys())))
+    test_results = test_kruskal_wallis(current_file,
+                                       list(SIMULATION_SCENARIOS.keys()))  # type: Optional[Dict[str, bool]]
+    if test_results is not None:
+        current_file_metrics.update(test_results)
 
     # alternative = "less"  # type:str
     # for scenario_under_analysis in SIMULATION_SCENARIOS.keys():

@@ -7,7 +7,7 @@ from typing import List, Tuple
 from abm_statistics import ADAPTIVE_SUPPORT_COLUMN
 from netlogo_config import ExperimentRun, ENABLE_STAFF_COMMAND, ENABLE_PASSENGER_COMMAND
 
-DATA_FILE = "formideable_results/exp_xvar_pi_50_50_60.csv"  # type: str
+DATA_FILE = "formideable_results/exp_rvar_0.5_50_50_90.csv"  # type: str
 
 # Temporary placeholders. Fall length and samples are extracted from filename
 FALL_LENGTHS = [0]  # type: List[int]
@@ -26,6 +26,8 @@ SIMULATION_SCENARIOS = {ADAPTIVE_SUPPORT_COLUMN: [
 
 def get_runs_from_file(commands_per_scenario):
     # type: (List[Tuple[str, bool]]) -> List[ExperimentRun]
+
+    print("Getting simulation parameters from {}".format(DATA_FILE))
 
     file_name, extension = os.path.splitext(DATA_FILE)  # type: Tuple
     name_tokens = file_name.split("_")  # type: List[str]

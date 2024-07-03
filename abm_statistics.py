@@ -1,3 +1,4 @@
+import sys
 from itertools import combinations
 
 import seaborn as sns
@@ -84,7 +85,11 @@ def plot_results(csv_file, samples_in_title=False):
 
 
 def test_kruskal_wallis(csv_file, column_list, threshold=0.05, method_for_adjusting="bonferroni"):
-    # type: (str, List[str], float, str) -> Dict[str, bool]
+    # type: (str, List[str], float, str) -> Optional[Dict[str, bool]]
+
+    if sys.version_info[0] < 3:
+        print("You need Python 3.x to run this analysis.")
+        return None
 
     import scikit_posthocs as sp
 
