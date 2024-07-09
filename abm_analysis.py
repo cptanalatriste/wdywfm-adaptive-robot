@@ -113,7 +113,8 @@ def start_experiments(fall_length, experiment_configurations, results_file):
 
     experiment_data = {}  # type: Dict[str, List[float]]
     for experiment_name, experiment_commands in experiment_configurations.items():
-        experiment_runs = run_parallel_simulations(setup_commands=experiment_commands)  # type:List[ExperimentRun]
+        experiment_runs = run_parallel_simulations(setup_commands=experiment_commands,
+                                                   fall_length=fall_length)  # type:List[ExperimentRun]
         experiment_data[experiment_name] = [run.evacuation_time for run in experiment_runs]
         experiment_data["{}_seed".format(experiment_name)] = [run.random_seed for run in experiment_runs]
         experiment_data["{}_passengers".format(experiment_name)] = [run.passenger_number for run in experiment_runs]
@@ -135,12 +136,12 @@ def run_simulation_with_dict(dict_parameters):
     return run_simulation(**dict_parameters)
 
 
-def run_parallel_simulations(setup_commands, gui=False):
-    # type: (List[Tuple[str, bool]], bool) -> List[ExperimentRun]
+def run_parallel_simulations(setup_commands, fall_length, gui=False):
+    # type: (List[Tuple[str, bool]], int, bool) -> List[ExperimentRun]
 
     initialise_arguments = (gui,)  # type: Tuple
     # Running FormIDEAble experiments. Adjustment for TOSEM is pending.
-    simulation_parameters = formideable.get_runs_from_file(setup_commands)  # type: List[ExperimentRun]
+    simulation_parameters = formideable.get_runs_from_file(setup_commands, fall_length)  # type: List[ExperimentRun]
 
     results = []  # type: List[ExperimentRun]
     executor = Pool(initializer=initialize,
@@ -157,11 +158,12 @@ def run_parallel_simulations(setup_commands, gui=False):
     return results
 
 
-def simulate_and_store(fall_length):
-    # type: (int) -> None
+def simulate_and_store(fall_length, results_file_name=None):
+    # type: (int, Optional[str]) -> None
     # Uncomment for TOSEM
     # results_file_name = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
-    results_file_name = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
+    if results_file_name is None:
+        results_file_name = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
 
     # Uncomment for TOSEM experiments
     # start_experiments(fall_length, SIMULATION_SCENARIOS, results_file_name)
@@ -185,12 +187,13 @@ def get_current_file_metrics(current_file):
     return metrics_dict
 
 
-def perform_analysis(fall_length):
-    # type: (int) -> Dict[str, float]
+def perform_analysis(fall_length, current_file=None):
+    # type: (int, Optional[str]) -> Dict[str, float]
 
     # Uncomment for TOSEM
     # current_file = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
-    current_file = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
+    if current_file is None:
+        current_file = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
     plt.style.use(PLOT_STYLE)
     plot_results(csv_file=current_file)
     current_file_metrics = get_current_file_metrics(current_file)  # type: Dict[str, float]
@@ -218,12 +221,14 @@ def perform_analysis(fall_length):
 if __name__ == "__main__":
     # Uncomment for TOSEM
     # for length in FALL_LENGTHS:
+    file_name_format = "data/formideable/" + formideable.RESULTS_FILE_PREFIX + "_gambit_results.csv"
     for length in formideable.FALL_LENGTHS:
-        simulate_and_store(length)
+        simulate_and_store(length, file_name_format.format(length))
 
     # Uncomment for TOSEM
     # metrics = pd.DataFrame([perform_analysis(length) for length in FALL_LENGTHS])  # type: pd.DataFrame
-    metrics = pd.DataFrame([perform_analysis(length) for length in formideable.FALL_LENGTHS])  # type: pd.DataFrame
+    metrics = pd.DataFrame([perform_analysis(length, file_name_format.format(length)) for length in
+                            formideable.FALL_LENGTHS])  # type: pd.DataFrame
 
     metrics_file = "data/metrics.csv"  # type: str
     metrics.to_csv(metrics_file)
