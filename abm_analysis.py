@@ -141,7 +141,7 @@ def run_parallel_simulations(setup_commands, fall_length, gui=False):
 
     initialise_arguments = (gui,)  # type: Tuple
     # Running FormIDEAble experiments. Adjustment for TOSEM is pending.
-    simulation_parameters = formideable.get_runs_from_file(setup_commands, fall_length)  # type: List[ExperimentRun]
+    simulation_parameters = formideable.get_runs(setup_commands, fall_length)  # type: List[ExperimentRun]
 
     results = []  # type: List[ExperimentRun]
     executor = Pool(initializer=initialize,

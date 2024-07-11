@@ -1,18 +1,26 @@
 import os
+import random
 
 import numpy as np
 import pandas as pd
 from typing import List, Tuple
 
-from abm_statistics import ADAPTIVE_SUPPORT_COLUMN, NO_SUPPORT_COLUMN
+from abm_statistics import ADAPTIVE_SUPPORT_COLUMN, NO_SUPPORT_COLUMN, ONLY_STAFF_SUPPORT_COLUMN, \
+    ONLY_PASSENGER_SUPPORT_COLUMN
 from netlogo_config import ExperimentRun, ENABLE_STAFF_COMMAND, ENABLE_PASSENGER_COMMAND
 
-RESULTS_FILE_PREFIX = "exp_rvar_0.5_50_50_{}"
-DATA_FILE_FORMAT = "formideable_results/" + RESULTS_FILE_PREFIX + ".csv"  # type: str
+SAMPLES = 50  # type: int
+FALL_LENGTHS = [minutes * 30 for minutes in range(1, 21)]  # type: List[int]
 
-# Temporary placeholders. Fall length and samples are extracted from filename
-FALL_LENGTHS = [30, 60]  # type: List[int]
-SAMPLES = 0  # type:int
+# For the replication of the TOSEM experiments
+NORMAL_STAFF_NUMBER = 8  # type: int
+STAFF_NUMBER = 1  # type: int
+PASSENGER_NUMBER = 800  # type: int
+RESULTS_FILE_PREFIX = "{}_fall_50_samples_experiment_results."
+
+# For loading experiment config from CSV files.
+# RESULTS_FILE_PREFIX = "exp_rvar_0.5_50_50_{}"
+DATA_FILE_FORMAT = "/home/cgc87/github/formal-robot-assisted-evacuation/workspace/data/" + RESULTS_FILE_PREFIX + ".csv"  # type: str
 
 RANDOM_SEED_COLUMN = "random_seed"  # type: str
 STAFF_NUMBER_COLUMN = "random_staff"  # type: str
@@ -20,12 +28,33 @@ PASSANGER_NUMBER_COLUMN = "random_pass"  # type: str
 
 SIMULATION_SCENARIOS = {
     NO_SUPPORT_COLUMN: [],
+    ONLY_STAFF_SUPPORT_COLUMN: [(ENABLE_STAFF_COMMAND, False)],
+    ONLY_PASSENGER_SUPPORT_COLUMN: [(ENABLE_PASSENGER_COMMAND, False)],
     ADAPTIVE_SUPPORT_COLUMN: [
         # (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
         # (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
         (ENABLE_PASSENGER_COMMAND, False),
         (ENABLE_STAFF_COMMAND, False)]
 }
+
+
+def get_runs(commands_per_scenario, fall_length):
+    # type: (List[Tuple[str, bool]], int) -> List[ExperimentRun]
+
+    min_seed = -2147483648  # type: int
+    max_seed = 2147483647  # type: int
+
+    experiment_runs = []  # type: List[ExperimentRun]
+    for simulation_id in range(SAMPLES):
+        random_seed = random.randrange(min_seed, max_seed)
+        experiment_runs.append(ExperimentRun(simulation_id=simulation_id, commands_per_scenario=commands_per_scenario,
+                                             random_seed=random_seed,
+                                             normal_staff_number=NORMAL_STAFF_NUMBER,
+                                             staff_number=STAFF_NUMBER,
+                                             passenger_number=PASSENGER_NUMBER,
+                                             fall_length=fall_length))
+
+    return experiment_runs
 
 
 def get_runs_from_file(commands_per_scenario, fall_length):
