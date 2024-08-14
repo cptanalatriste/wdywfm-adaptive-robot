@@ -114,7 +114,8 @@ def start_experiments(fall_length, experiment_configurations, results_file):
     experiment_data = {}  # type: Dict[str, List[float]]
     for experiment_name, experiment_commands in experiment_configurations.items():
         experiment_runs = run_parallel_simulations(setup_commands=experiment_commands,
-                                                   fall_length=fall_length)  # type:List[ExperimentRun]
+                                                   fall_length=fall_length,
+                                                   experiment_name=experiment_name)  # type:List[ExperimentRun]
         experiment_data[experiment_name] = [run.evacuation_time for run in experiment_runs]
         experiment_data["{}_seed".format(experiment_name)] = [run.random_seed for run in experiment_runs]
         experiment_data["{}_passengers".format(experiment_name)] = [run.passenger_number for run in experiment_runs]
@@ -136,12 +137,14 @@ def run_simulation_with_dict(dict_parameters):
     return run_simulation(**dict_parameters)
 
 
-def run_parallel_simulations(setup_commands, fall_length, gui=False):
-    # type: (List[Tuple[str, bool]], int, bool) -> List[ExperimentRun]
+def run_parallel_simulations(setup_commands, fall_length, experiment_name="", gui=False):
+    # type: (List[Tuple[str, bool]], int, str, bool) -> List[ExperimentRun]
 
     initialise_arguments = (gui,)  # type: Tuple
     # Running FormIDEAble experiments. Adjustment for TOSEM is pending.
-    simulation_parameters = formideable.get_runs(setup_commands, fall_length)  # type: List[ExperimentRun]
+    # simulation_parameters = formideable.get_runs(experiment_name,
+    #   setup_commands, fall_length)  # type: List[ExperimentRun]
+    simulation_parameters = formideable.get_runs_from_file(experiment_name, setup_commands, fall_length)  # type: List[ExperimentRun]
 
     results = []  # type: List[ExperimentRun]
     executor = Pool(initializer=initialize,

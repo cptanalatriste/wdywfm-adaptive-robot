@@ -3,10 +3,12 @@ from typing import List, Tuple
 
 class ExperimentRun(object):
 
-    def __init__(self, simulation_id, commands_per_scenario, random_seed, normal_staff_number, staff_number,
+    def __init__(self, experiment_name, simulation_id, commands_per_scenario, random_seed, normal_staff_number,
+                 staff_number,
                  passenger_number, fall_length):
-        # type: (int, List[Tuple[str, bool]], int, int, int, int, int) -> None
+        # type: (str, int, List[Tuple[str, bool]], int, int, int, int, int) -> None
 
+        self.experiment_name = experiment_name  # type: str
         self.simulation_id = simulation_id  # type: int
         self.base_scenario_commands = commands_per_scenario  # type: List[Tuple[str, bool]]
 
@@ -39,6 +41,9 @@ class ExperimentRun(object):
                                not before_setup]  # type: List[str]
 
         post_setup_commands.append(SET_FALL_LENGTH_COMMAND.format(self.fall_length))
+        netlogo_simulation_id = '"{}_id_{}_seed_{}_fall_{}"'.format(self.experiment_name, self.simulation_id,
+                                                                    self.random_seed, self.fall_length)  # type: str
+        post_setup_commands.append(SET_SIMULATION_ID_COMMAND.format(netlogo_simulation_id))
 
         return post_setup_commands
 
