@@ -38,15 +38,15 @@ SIMULATION_SCENARIOS = {
     #     (ENABLE_STAFF_COMMAND, False),
     #     (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
     #     (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
-    ONLY_PASSENGER_SUPPORT_COLUMN: [
-        (ENABLE_PASSENGER_COMMAND, False),
-        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
-        (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
-    # ADAPTIVE_SUPPORT_COLUMN: [
-    #     # (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
-    #     # (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
+    # ONLY_PASSENGER_SUPPORT_COLUMN: [
     #     (ENABLE_PASSENGER_COMMAND, False),
-    #     (ENABLE_STAFF_COMMAND, False)]
+    #     (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+    #     (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
+    ADAPTIVE_SUPPORT_COLUMN: [
+        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
+        (ENABLE_PASSENGER_COMMAND, False),
+        (ENABLE_STAFF_COMMAND, False)]
 }
 
 

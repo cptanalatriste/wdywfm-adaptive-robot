@@ -51,7 +51,7 @@ class AutonomicManagerController(AbstractRobotController):
         return shared_identity_prob
 
     def sensor_data_callback(self, sensor_data, model_filename=None):
-        # type: (np.ndarray, Optional[str]) -> Optional[str]
+        # type: (np.ndarray, Optional[str]) -> Tuple[Optional[str], float]
 
         group_identity_prob = self.get_shared_identity_probability(sensor_data)  # type: float
         logging.info("group_identity_prob :  %.4f " % group_identity_prob)
@@ -63,17 +63,17 @@ class AutonomicManagerController(AbstractRobotController):
 
         if len(equilibria) == 0:
             logging.warning("No equilibria found! Aborting")
-            return
+            return None, group_identity_prob
 
         if len(equilibria) > 1:
             logging.warning("Multiple equilibria found! Aborting")
-            return
+            return None, group_identity_prob
         strategy_profile = equilibria[0]  # type: NashSolution
 
         robot_strategy = self.interaction_game.get_robot_strategy(strategy_profile)  # type: Dict[str, float]
         robot_action = max(robot_strategy, key=robot_strategy.get)  # type: str
 
-        return robot_action
+        return robot_action, group_identity_prob
 
     def model_interaction(self, zero_responder_prob, filename):
         # type: (float, Optional[str]) -> None
@@ -113,8 +113,9 @@ class AutonomicManagerController(AbstractRobotController):
 def main():
     manager = AutonomicManagerController(analyser.NeuralNetworkTypeAnalyser(model_file="trained_model.h5"))
     sample_sensor_reading = np.zeros(shape=(1, 31))  # type: np.ndarray
-    robot_action = manager.sensor_data_callback(sample_sensor_reading)
+    robot_action, identity_probability = manager.sensor_data_callback(sample_sensor_reading)
     print(robot_action)
+    print(identity_probability)
 
 
 if __name__ == "__main__":

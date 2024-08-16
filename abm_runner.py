@@ -3,7 +3,7 @@ import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import numpy as np
-from typing import Dict
+from typing import Dict, Tuple
 
 import abm_gamemodel
 from abm_trainer import CALIBRATION_SENSOR_DATA_FILE, CALIBRATION_PERSON_TYPE_FILE
@@ -20,18 +20,19 @@ PROJECT_DIRECTORY = "/home/cgc87/github/wdywfm-adaptive-robot/"  # type:str
 
 
 def run_scenario(robot_controller, emergency_environment):
-    # type: ( AutonomicManagerController,  NetlogoEvacuationEnvironment) -> str
+    # type: ( AutonomicManagerController,  NetlogoEvacuationEnvironment) -> Tuple[str, float]
 
     current_sensor_data = emergency_environment.reset()  # type: np.ndarray
 
     model_filename = "efg/simulation_{}_game_model.efg".format(emergency_environment.simulation_id)  # type:str
 
     robot_controller.measure_distance(emergency_environment)
-    robot_action = robot_controller.sensor_data_callback(current_sensor_data, model_filename)  # type:str
+    robot_action, identity_probability = robot_controller.sensor_data_callback(current_sensor_data,
+                                                                               model_filename)  # type:Tuple[str, float]
 
-    logging.debug("robot_action {}".format(robot_action))
+    logging.debug("robot_action {} identity_probability {}".format(robot_action, identity_probability))
 
-    return robot_action
+    return robot_action, identity_probability
 
 
 def get_calibrated_analyser():
@@ -78,8 +79,8 @@ def main():
         NetlogoEvacuationEnvironment(configuration,
                                      PROJECT_DIRECTORY + ENCODER_FILE)  # type: NetlogoEvacuationEnvironment
 
-    robot_action = run_scenario(robot_controller, emergency_environment)  # type:str
-    print(robot_action)
+    robot_action, identity_probability = run_scenario(robot_controller, emergency_environment)  # type:Tuple[str, float]
+    print("{} (Prob={})".format(robot_action, identity_probability))
 
 
 if __name__ == "__main__":

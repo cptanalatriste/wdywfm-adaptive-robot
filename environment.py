@@ -20,7 +20,7 @@ CLASS_TO_TYPE = {
 class NetlogoEvacuationEnvironment(object):
 
     def __init__(self, sensor_data, encoder_filename):
-        self.simulation_id = int(sensor_data["simulation_id"])  # type: int
+        self.simulation_id = str(sensor_data["simulation_id"])  # type: str
 
         self.helper_gender = int(sensor_data["helper_gender"])  # type: int
         self.helper_culture = int(sensor_data["helper_culture"])  # type: int
