@@ -1,0 +1,1 @@
+python abm_analysis.py > experiment_output.log
