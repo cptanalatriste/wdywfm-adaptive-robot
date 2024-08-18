@@ -10,8 +10,8 @@ from abm_statistics import ADAPTIVE_SUPPORT_COLUMN, NO_SUPPORT_COLUMN, ONLY_STAF
 from netlogo_config import (ExperimentRun, ENABLE_STAFF_COMMAND, ENABLE_PASSENGER_COMMAND, SET_GENERATE_FRAMES_COMMAND,
                             SET_ENABLE_LOGGING_COMMAND)
 
-# SAMPLES = 50  # type: int
-SAMPLES = 3  # type: int
+SAMPLES = 50  # type: int
+# SAMPLES = 1  # type: int
 # FALL_LENGTHS = [minutes * 30 for minutes in range(1, 21)]  # type: List[int]
 FALL_LENGTHS = [minutes * 30 for minutes in range(1, 2)]
 
@@ -30,18 +30,18 @@ STAFF_NUMBER_COLUMN = "random_staff"  # type: str
 PASSANGER_NUMBER_COLUMN = "random_pass"  # type: str
 
 SIMULATION_SCENARIOS = {
-    # NO_SUPPORT_COLUMN: [
-    #     (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
-    #     (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
-    # ],
-    # ONLY_STAFF_SUPPORT_COLUMN: [
-    #     (ENABLE_STAFF_COMMAND, False),
-    #     (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
-    #     (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
-    # ONLY_PASSENGER_SUPPORT_COLUMN: [
-    #     (ENABLE_PASSENGER_COMMAND, False),
-    #     (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
-    #     (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
+    NO_SUPPORT_COLUMN: [
+        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
+    ],
+    ONLY_STAFF_SUPPORT_COLUMN: [
+        (ENABLE_STAFF_COMMAND, False),
+        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
+    ONLY_PASSENGER_SUPPORT_COLUMN: [
+        (ENABLE_PASSENGER_COMMAND, False),
+        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
     ADAPTIVE_SUPPORT_COLUMN: [
         (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
         (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),

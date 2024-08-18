@@ -16,6 +16,7 @@ from typing import List, Tuple, Dict, Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from argparse import ArgumentParser
 from abm_statistics import NO_SUPPORT_COLUMN, ONLY_STAFF_SUPPORT_COLUMN, ONLY_PASSENGER_SUPPORT_COLUMN, \
     ADAPTIVE_SUPPORT_COLUMN, get_dataframe, plot_results, test_kruskal_wallis
 import formideable
@@ -23,6 +24,9 @@ from netlogo_config import NETLOGO_MODEL_FILE, NETLOGO_HOME, NETLOGO_VERSION, TU
     EVACUATED_REPORTER, DEAD_REPORTER, ENABLE_STAFF_COMMAND, ENABLE_PASSENGER_COMMAND, MAX_NETLOGO_TICKS, ExperimentRun
 
 PLOT_STYLE = 'seaborn-darkgrid'
+
+LOAD_CONFIG_FROM_FILE = False  # type: bool
+USE_FORMIDEABLE_CONFIG = False  # type: bool
 
 RESULTS_CSV_FILE = "data/{}_fall_{}_samples_experiment_results.csv"  # type:str
 
@@ -48,7 +52,7 @@ def run_simulation(experiment_run):
     # type: (ExperimentRun) -> Optional[ExperimentRun]
     from pyNetLogo import NetLogoException
 
-    simulation_id = experiment_run.simulation_id
+    simulation_id = experiment_run.get_netlogo_simulation_id()
     pre_setup_commands = experiment_run.get_pre_setup_commands()  # type: List[str]
     post_setup_commands = experiment_run.get_post_setup_commands()  # type: List[str]
 
@@ -141,10 +145,14 @@ def run_parallel_simulations(setup_commands, fall_length, experiment_name="", gu
     # type: (List[Tuple[str, bool]], int, str, bool) -> List[ExperimentRun]
 
     initialise_arguments = (gui,)  # type: Tuple
-    # Running FormIDEAble experiments. Adjustment for TOSEM is pending.
-    # simulation_parameters = formideable.get_runs(experiment_name,
-    #   setup_commands, fall_length)  # type: List[ExperimentRun]
-    simulation_parameters = formideable.get_runs_from_file(experiment_name, setup_commands, fall_length)  # type: List[ExperimentRun]
+
+    if LOAD_CONFIG_FROM_FILE:
+        simulation_parameters = formideable.get_runs_from_file(experiment_name,
+                                                               setup_commands, fall_length)  # type: List[ExperimentRun]
+    else:
+        # Running FormIDEAble experiments. Adjustment for TOSEM is pending.
+        simulation_parameters = formideable.get_runs(experiment_name,
+                                                     setup_commands, fall_length)  # type: List[ExperimentRun]
 
     results = []  # type: List[ExperimentRun]
     executor = Pool(initializer=initialize,
@@ -163,15 +171,17 @@ def run_parallel_simulations(setup_commands, fall_length, experiment_name="", gu
 
 def simulate_and_store(fall_length, results_file_name=None):
     # type: (int, Optional[str]) -> None
-    # Uncomment for TOSEM
-    # results_file_name = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
+
+    simulation_scenarios = SIMULATION_SCENARIOS
+    samples = SAMPLES
+    if USE_FORMIDEABLE_CONFIG:
+        simulation_scenarios = formideable.SIMULATION_SCENARIOS
+        samples = formideable.SAMPLES
+
     if results_file_name is None:
-        results_file_name = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
+        results_file_name = RESULTS_CSV_FILE.format(fall_length, samples)  # type:str
 
-    # Uncomment for TOSEM experiments
-    # start_experiments(fall_length, SIMULATION_SCENARIOS, results_file_name)
-
-    start_experiments(fall_length, formideable.SIMULATION_SCENARIOS, results_file_name)
+    start_experiments(fall_length, simulation_scenarios, results_file_name)
 
 
 def get_current_file_metrics(current_file):
@@ -193,10 +203,12 @@ def get_current_file_metrics(current_file):
 def perform_analysis(fall_length, current_file=None):
     # type: (int, Optional[str]) -> Dict[str, float]
 
-    # Uncomment for TOSEM
-    # current_file = RESULTS_CSV_FILE.format(fall_length, SAMPLES)  # type:str
+    samples = SAMPLES
+    if USE_FORMIDEABLE_CONFIG:
+        samples = formideable.SAMPLES
+
     if current_file is None:
-        current_file = RESULTS_CSV_FILE.format(fall_length, formideable.SAMPLES)  # type:str
+        current_file = RESULTS_CSV_FILE.format(fall_length, samples)  # type:str
     plt.style.use(PLOT_STYLE)
     plot_results(csv_file=current_file)
     current_file_metrics = get_current_file_metrics(current_file)  # type: Dict[str, float]
@@ -221,18 +233,39 @@ def perform_analysis(fall_length, current_file=None):
     return current_file_metrics
 
 
-if __name__ == "__main__":
-    # Uncomment for TOSEM
-    # for length in FALL_LENGTHS:
-    file_name_format = "data/formideable/" + formideable.RESULTS_FILE_PREFIX + "_gambit_results.csv"
-    for length in formideable.FALL_LENGTHS:
+def main():
+    fall_lengths = FALL_LENGTHS
+    if USE_FORMIDEABLE_CONFIG:
+        fall_lengths = formideable.FALL_LENGTHS
+        file_name_format = "data/formideable/" + formideable.RESULTS_FILE_PREFIX + "_gambit_results.csv"
+
+    for length in fall_lengths:
         simulate_and_store(length, file_name_format.format(length))
 
-    # Uncomment for TOSEM
-    # metrics = pd.DataFrame([perform_analysis(length) for length in FALL_LENGTHS])  # type: pd.DataFrame
     metrics = pd.DataFrame([perform_analysis(length, file_name_format.format(length)) for length in
-                            formideable.FALL_LENGTHS])  # type: pd.DataFrame
+                            fall_lengths])  # type: pd.DataFrame
 
     metrics_file = "data/metrics.csv"  # type: str
     metrics.to_csv(metrics_file)
     print("Consolidates metrics written to {}".format(metrics_file))
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()  # type: ArgumentParser
+    parser.add_argument("--load_file")
+    parser.add_argument("--formideable")
+    parser.add_argument("--naive")
+
+    arguments = parser.parse_args()
+    if arguments.load_file:
+        LOAD_CONFIG_FROM_FILE = True
+    else:
+        LOAD_CONFIG_FROM_FILE = False
+
+    if arguments.formideable:
+        USE_FORMIDEABLE_CONFIG = True
+    else:
+        USE_FORMIDEABLE_CONFIG = True
+
+
+    main()

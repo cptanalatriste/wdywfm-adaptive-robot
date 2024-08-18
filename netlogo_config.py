@@ -41,11 +41,17 @@ class ExperimentRun(object):
                                not before_setup]  # type: List[str]
 
         post_setup_commands.append(SET_FALL_LENGTH_COMMAND.format(self.fall_length))
-        netlogo_simulation_id = '"{}_id_{}_seed_{}_fall_{}"'.format(self.experiment_name, self.simulation_id,
-                                                                    self.random_seed, self.fall_length)  # type: str
-        post_setup_commands.append(SET_SIMULATION_ID_COMMAND.format(netlogo_simulation_id))
+        post_setup_commands.append(SET_SIMULATION_ID_COMMAND.format(self.get_netlogo_simulation_id()))
 
         return post_setup_commands
+
+    def get_netlogo_simulation_id(self):
+        # type: () -> str
+        netlogo_simulation_id = '"{}_id_{}_seed_{}_fall_{}"'.format(self.experiment_name, self.simulation_id,
+                                                                    self.random_seed, self.fall_length)
+
+        return netlogo_simulation_id
+
 
 
 NETLOGO_PROJECT_DIRECTORY = "/home/cgc87/github/robot-assisted-evacuation/"  # type:str

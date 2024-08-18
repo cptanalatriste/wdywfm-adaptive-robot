@@ -16,6 +16,7 @@ from synthetic_runner import TYPE_ANALYSER_MODEL_FILE, ENCODER_FILE
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Running inference on CPU
 
+USE_NAIVE_ANALYSER = True  # type: bool
 PROJECT_DIRECTORY = "/home/cgc87/github/wdywfm-adaptive-robot/"  # type:str
 
 
@@ -68,10 +69,12 @@ def main():
     arguments = parser.parse_args()
     configuration = vars(arguments)  # type:Dict
 
-    # This is the type analyser used for TOSEM 204
-    # type_analyser = get_calibrated_analyser()
+    # This is the type analyser used for TOSEM
+    type_analyser = get_calibrated_analyser()
 
-    type_analyser = get_naive_analyser()
+    # This is the type analyser used with constant probability.
+    if USE_NAIVE_ANALYSER:
+        type_analyser = get_naive_analyser()
     robot_controller = AutonomicManagerController(type_analyser,
                                                   abm_gamemodel.generate_game_model)
 
