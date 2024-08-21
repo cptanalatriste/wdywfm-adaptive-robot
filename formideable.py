@@ -22,12 +22,22 @@ PASSENGER_NUMBER = 800  # type: int
 # RESULTS_FILE_PREFIX = "{}_fall_50_samples_experiment_results."
 
 # For loading experiment config from CSV files.
-RESULTS_FILE_PREFIX = "exp_rvar_0.5_50_50_{}"
-DATA_FILE_FORMAT = "/home/cgc87/github/formal-robot-assisted-evacuation/workspace/data/" + RESULTS_FILE_PREFIX + ".csv"  # type: str
+USE_FORMIDEABLE_FILES = True  # type: bool
 
+RESULTS_FILE_PREFIX = "exp_rvar_0.5_50_50_{}"  # type: str
+RESULT_FILE_SUFFIX = "_from_FORMIDEABLE.csv"  # type: str
 RANDOM_SEED_COLUMN = "random_seed"  # type: str
 STAFF_NUMBER_COLUMN = "random_staff"  # type: str
 PASSANGER_NUMBER_COLUMN = "random_pass"  # type: str
+
+IDEA_RESULTS_FILE_PREFIX = "exp_rvar_0.5_50_50_{}_gambit_results"  # type: str
+IDEA_RESULT_FILE_SUFFIX = "_from_IDEA.csv"  # type: str
+RANDOM_SEED_COLUMN_FORMAT = "{}_seed"  # type: str
+STAFF_NUMBER_COLUMN_FORMAT = "{}_staff"  # type: str
+PASSANGER_NUMBER_COLUMN_FORMAT = "{}_passengers"  # type: str
+
+DATA_DIRECTORY = "/home/cgc87/github/formal-robot-assisted-evacuation/workspace/data/"
+
 
 SIMULATION_SCENARIOS = {
     NO_SUPPORT_COLUMN: [
@@ -74,23 +84,38 @@ def get_runs(experiment_name, commands_per_scenario, fall_length):
 def get_runs_from_file(experiment_name, commands_per_scenario, fall_length):
     # type: (str, List[Tuple[str, bool]], int) -> List[ExperimentRun]
 
-    path = DATA_FILE_FORMAT.format(fall_length)  # type: str
+    prefix = RESULTS_FILE_PREFIX
+    if not USE_FORMIDEABLE_FILES:
+        prefix = IDEA_RESULTS_FILE_PREFIX
+
+    data_file_format = DATA_DIRECTORY + prefix + ".csv"  # type: str
+    path = data_file_format.format(fall_length)  # type: str
     print("Getting simulation parameters from {}".format(path))
 
     file_name, extension = os.path.splitext(path)  # type: Tuple
     name_tokens = file_name.split("_")  # type: List[str]
 
-    fall_length_from_file = int(name_tokens[-1])  # type: int
-    if fall_length != fall_length_from_file:
-        raise ValueError("Provided length {} does not correspond to file {}".format(fall_length, file_name))
+    if USE_FORMIDEABLE_FILES:
+        fall_length_from_file = int(name_tokens[-1])  # type: int
+        if fall_length != fall_length_from_file:
+            raise ValueError("Provided length {} does not correspond to file {}".format(fall_length, file_name))
 
     data_frame = pd.read_csv(path)  # type: pd.DataFrame
 
     samples = SAMPLES  # type: int
     # samples = len(data_frame)  # type: int
-    random_seeds = data_frame[RANDOM_SEED_COLUMN].to_list()  # type: List[int]
-    staff_number = data_frame[STAFF_NUMBER_COLUMN].to_list()  # type: List[int]
-    passenger_number = data_frame[PASSANGER_NUMBER_COLUMN].to_list()  # type: List[int]
+
+    random_seed_column = RANDOM_SEED_COLUMN
+    staff_number_column = STAFF_NUMBER_COLUMN
+    passenger_number_column = PASSANGER_NUMBER_COLUMN
+    if not USE_FORMIDEABLE_FILES:
+        random_seed_column = RANDOM_SEED_COLUMN_FORMAT.format(experiment_name)
+        staff_number_column = STAFF_NUMBER_COLUMN_FORMAT.format(experiment_name)
+        passenger_number_column = PASSANGER_NUMBER_COLUMN_FORMAT.format(experiment_name)
+
+    random_seeds = data_frame[random_seed_column].to_list()  # type: List[int]
+    staff_number = data_frame[staff_number_column].to_list()  # type: List[int]
+    passenger_number = data_frame[passenger_number_column].to_list()  # type: List[int]
 
     # Temporary workaround
     normal_staff_number = [1 for staff in range(1, samples + 1)]  # type: List[int]
@@ -104,7 +129,7 @@ def get_runs_from_file(experiment_name, commands_per_scenario, fall_length):
                                              normal_staff_number=normal_staff_number[simulation_id],
                                              staff_number=staff_number[simulation_id],
                                              passenger_number=passenger_number[simulation_id],
-                                             fall_length=fall_length_from_file))
+                                             fall_length=fall_length))
 
     return experiment_runs
 

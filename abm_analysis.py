@@ -235,9 +235,19 @@ def perform_analysis(fall_length, current_file=None):
 
 def main():
     fall_lengths = FALL_LENGTHS
+    file_name_format = None
+    print("USE_FORMIDEABLE_CONFIG={}".format(USE_FORMIDEABLE_CONFIG))
     if USE_FORMIDEABLE_CONFIG:
         fall_lengths = formideable.FALL_LENGTHS
-        file_name_format = "data/formideable/" + formideable.RESULTS_FILE_PREFIX + "_gambit_results.csv"
+
+        prefix = formideable.RESULTS_FILE_PREFIX
+        suffix = formideable.RESULT_FILE_SUFFIX
+
+        if not formideable.USE_FORMIDEABLE_FILES:
+            prefix = formideable.IDEA_RESULTS_FILE_PREFIX
+            suffix = formideable.IDEA_RESULT_FILE_SUFFIX
+
+        file_name_format = "data/formideable/" + prefix + suffix
 
     for length in fall_lengths:
         simulate_and_store(length, file_name_format.format(length))
@@ -252,20 +262,31 @@ def main():
 
 if __name__ == "__main__":
     parser = ArgumentParser()  # type: ArgumentParser
+    parser.add_argument("data_directory")
+    parser.add_argument("samples")
+
     parser.add_argument("--load_file")
-    parser.add_argument("--formideable")
+    parser.add_argument("--formideable_config")
     parser.add_argument("--naive")
+    parser.add_argument("--formideable_files")
 
     arguments = parser.parse_args()
-    if arguments.load_file:
+
+    formideable.DATA_DIRECTORY = arguments.data_directory
+    formideable.SAMPLES = int(arguments.samples)
+
+    LOAD_CONFIG_FROM_FILE = False
+    if arguments.load_file == "1":
         LOAD_CONFIG_FROM_FILE = True
-    else:
-        LOAD_CONFIG_FROM_FILE = False
 
-    if arguments.formideable:
-        USE_FORMIDEABLE_CONFIG = True
-    else:
+    USE_FORMIDEABLE_CONFIG = False
+    if arguments.formideable_config == "1":
         USE_FORMIDEABLE_CONFIG = True
 
+    formideable.USE_FORMIDEABLE_FILES = False
+    if arguments.formideable_files == "1":
+        formideable.USE_FORMIDEABLE_FILES = True
+
+    print(arguments)
 
     main()

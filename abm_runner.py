@@ -16,7 +16,7 @@ from synthetic_runner import TYPE_ANALYSER_MODEL_FILE, ENCODER_FILE
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Running inference on CPU
 
-USE_NAIVE_ANALYSER = True  # type: bool
+USE_NAIVE_ANALYSER = False  # type: bool
 PROJECT_DIRECTORY = "/home/cgc87/github/wdywfm-adaptive-robot/"  # type:str
 
 
