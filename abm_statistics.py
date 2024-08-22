@@ -49,7 +49,7 @@ def get_dataframe(csv_file):
     return results_dataframe
 
 
-def plot_results(csv_file, samples_in_title=False):
+def plot_results(csv_file, samples_in_title=False, show_plots=True):
     # type: (str, bool) -> None
     file_description = Path(csv_file).stem  # type: str
     results_dataframe = get_dataframe(csv_file)  # type: pd.DataFrame
@@ -76,12 +76,14 @@ def plot_results(csv_file, samples_in_title=False):
 
     plt.savefig("img/" + file_description + "_violin_plot.png", bbox_inches='tight', pad_inches=0)
     plt.savefig("img/" + file_description + "_violin_plot.eps", bbox_inches='tight', pad_inches=0)
-    plt.show()
+    if show_plots:
+        plt.show()
 
     _ = sns.stripplot(data=results_dataframe, order=order, jitter=True).set_title(title)
     plt.savefig("img/" + file_description + "_strip_plot.png", bbox_inches='tight', pad_inches=0)
     plt.savefig("img/" + file_description + "_strip_plot.eps", bbox_inches='tight', pad_inches=0)
-    plt.show()
+    if show_plots:
+        plt.show()
 
 
 def test_kruskal_wallis(csv_file, column_list, threshold=0.05, method_for_adjusting="bonferroni"):

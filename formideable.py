@@ -30,10 +30,12 @@ RANDOM_SEED_COLUMN = "random_seed"  # type: str
 STAFF_NUMBER_COLUMN = "random_staff"  # type: str
 PASSANGER_NUMBER_COLUMN = "random_pass"  # type: str
 
-IDEA_RESULTS_FILE_PREFIX = "exp_rvar_0.5_50_50_{}_gambit_results"  # type: str
+# IDEA_RESULTS_FILE_PREFIX = "exp_rvar_0.5_50_50_{}_gambit_results"  # type: str
+IDEA_RESULTS_FILE_PREFIX = "{}_fall_50_samples_experiment_results._gambit_results"  # type: str
 IDEA_RESULT_FILE_SUFFIX = "_from_IDEA.csv"  # type: str
 RANDOM_SEED_COLUMN_FORMAT = "{}_seed"  # type: str
 STAFF_NUMBER_COLUMN_FORMAT = "{}_staff"  # type: str
+NORMAL_STAFF_NUMBER_COLUMN_FORMAT = "{}_normal_staff"  # type: str
 PASSANGER_NUMBER_COLUMN_FORMAT = "{}_passengers"  # type: str
 
 DATA_DIRECTORY = "/home/cgc87/github/formal-robot-assisted-evacuation/workspace/data/"
@@ -41,19 +43,19 @@ DATA_DIRECTORY = "/home/cgc87/github/formal-robot-assisted-evacuation/workspace/
 
 SIMULATION_SCENARIOS = {
     NO_SUPPORT_COLUMN: [
-        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        # (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
         (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
     ],
     ONLY_STAFF_SUPPORT_COLUMN: [
         (ENABLE_STAFF_COMMAND, False),
-        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        # (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
         (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
     ONLY_PASSENGER_SUPPORT_COLUMN: [
         (ENABLE_PASSENGER_COMMAND, False),
-        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        # (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
         (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False)],
     ADAPTIVE_SUPPORT_COLUMN: [
-        (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
+        # (SET_GENERATE_FRAMES_COMMAND.format("TRUE"), False),
         (SET_ENABLE_LOGGING_COMMAND.format("TRUE"), False),
         (ENABLE_PASSENGER_COMMAND, False),
         (ENABLE_STAFF_COMMAND, False)]
@@ -108,17 +110,21 @@ def get_runs_from_file(experiment_name, commands_per_scenario, fall_length):
     random_seed_column = RANDOM_SEED_COLUMN
     staff_number_column = STAFF_NUMBER_COLUMN
     passenger_number_column = PASSANGER_NUMBER_COLUMN
+    # Temporary workaround
+    normal_staff_number = [1 for staff in range(1, samples + 1)]  # type: List[int]
+
     if not USE_FORMIDEABLE_FILES:
         random_seed_column = RANDOM_SEED_COLUMN_FORMAT.format(experiment_name)
         staff_number_column = STAFF_NUMBER_COLUMN_FORMAT.format(experiment_name)
         passenger_number_column = PASSANGER_NUMBER_COLUMN_FORMAT.format(experiment_name)
 
+        normal_staff_number_column = NORMAL_STAFF_NUMBER_COLUMN_FORMAT.format(experiment_name)
+        normal_staff_number = data_frame[normal_staff_number_column].to_list()
+
     random_seeds = data_frame[random_seed_column].to_list()  # type: List[int]
     staff_number = data_frame[staff_number_column].to_list()  # type: List[int]
     passenger_number = data_frame[passenger_number_column].to_list()  # type: List[int]
 
-    # Temporary workaround
-    normal_staff_number = [1 for staff in range(1, samples + 1)]  # type: List[int]
 
     experiment_runs = []  # type: List[ExperimentRun]
     for simulation_id in range(samples):

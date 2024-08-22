@@ -27,6 +27,7 @@ PLOT_STYLE = 'seaborn-darkgrid'
 
 LOAD_CONFIG_FROM_FILE = False  # type: bool
 USE_FORMIDEABLE_CONFIG = False  # type: bool
+SHOW_PLOTS = True # type: bool
 
 RESULTS_CSV_FILE = "data/{}_fall_{}_samples_experiment_results.csv"  # type:str
 
@@ -210,7 +211,7 @@ def perform_analysis(fall_length, current_file=None):
     if current_file is None:
         current_file = RESULTS_CSV_FILE.format(fall_length, samples)  # type:str
     plt.style.use(PLOT_STYLE)
-    plot_results(csv_file=current_file)
+    plot_results(csv_file=current_file, show_plots=SHOW_PLOTS)
     current_file_metrics = get_current_file_metrics(current_file)  # type: Dict[str, float]
     current_file_metrics["fall_length"] = fall_length
 
@@ -269,6 +270,8 @@ if __name__ == "__main__":
     parser.add_argument("--formideable_config")
     parser.add_argument("--naive")
     parser.add_argument("--formideable_files")
+    parser.add_argument("--show_plots")
+
 
     arguments = parser.parse_args()
 
@@ -286,6 +289,10 @@ if __name__ == "__main__":
     formideable.USE_FORMIDEABLE_FILES = False
     if arguments.formideable_files == "1":
         formideable.USE_FORMIDEABLE_FILES = True
+
+    SHOW_PLOTS = False
+    if arguments.show_plots == "1":
+        SHOW_PLOTS = True
 
     print(arguments)
 
